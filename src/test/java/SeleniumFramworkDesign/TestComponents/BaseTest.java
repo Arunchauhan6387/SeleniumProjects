@@ -34,35 +34,33 @@ public class BaseTest {
 	public LandingPage landingpage;
 
 	public WebDriver initializeDriver() throws IOException {
-		Properties prop = new Properties();
-		FileInputStream fls = new FileInputStream(System.getProperty("user.dir")
-				+ "//src//main//java//SeleniumFramworkDesign//resources//GlobalData.properties");
-		prop.load(fls);
-		
-		String browserName = System.getProperty("browser")!=null ? System.getProperty("browser") : prop.getProperty("browser");
-		
-		//prop.getProperty("browser");
-		if (browserName.contains("chrome")) {
-			//ChromeOptions options = new ChromeOptions();
-			WebDriverManager.chromedriver().setup();
-//			if(browserName.contains("headless"))
-//			{
-//				options.addArguments("headless");
-//			}
-			
-			driver = new ChromeDriver();
-			driver.manage().window().setSize(new Dimension(1440,900));
-			
-		} else if (browserName.equals("edge")) {
-			 driver = new EdgeDriver();
-		} else if (browserName.equals("Firefox")) {
-			 driver = new FirefoxDriver();
+	    Properties prop = new Properties();
+	    FileInputStream fls = new FileInputStream(System.getProperty("user.dir")
+	            + "//src//main//java//SeleniumFramworkDesign//resources//GlobalData.properties");
+	    prop.load(fls);
 
-		}
-		driver.manage().window().maximize();
-		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
-		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-		return driver;
+	    // This logic is good! It prioritizes the Jenkins parameter.
+	    String browserName = System.getProperty("browser") != null ? System.getProperty("browser") : prop.getProperty("browser");
+
+	    if (browserName.equalsIgnoreCase("chrome")) {
+	        WebDriverManager.chromedriver().setup();
+	        driver = new ChromeDriver();
+	        driver.manage().window().setSize(new Dimension(1440, 900)); // Specific to Chrome in your code
+
+	    } else if (browserName.equalsIgnoreCase("edge")) {
+	        // ✅ Added WebDriverManager for Edge
+	        WebDriverManager.edgedriver().setup();
+	        driver = new EdgeDriver();
+
+	    } else if (browserName.equalsIgnoreCase("firefox")) { // ✅ Changed to ignore case
+	        // ✅ Added WebDriverManager for Firefox
+	        WebDriverManager.firefoxdriver().setup();
+	        driver = new FirefoxDriver();
+	    }
+
+	    driver.manage().window().maximize();
+	    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+	    return driver;
 	}
 
 	@BeforeMethod(alwaysRun = true)
