@@ -2,7 +2,7 @@ package SeleniumFramworkDesign.TestComponents;
 
 import java.io.IOException;
 
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
@@ -13,14 +13,13 @@ import com.aventstack.extentreports.Status;
 
 import SeleniumFramworkDesign.resources.ExtentReporterNG;
 
-public class Listeners extends BaseTest implements ITestListener {
+public class Listeners implements ITestListener {
 	ExtentReports extent = ExtentReporterNG.getReportObject(); // calling report method
-	ExtentTest test;
 	ThreadLocal<ExtentTest> Extenttest = new ThreadLocal<ExtentTest>();
 
 	@Override
 	public void onTestStart(ITestResult result) {
-		test = extent.createTest(result.getMethod().getMethodName());
+		ExtentTest test = extent.createTest(result.getMethod().getMethodName());
 		Extenttest.set(test);
 	}
 
@@ -31,21 +30,27 @@ public class Listeners extends BaseTest implements ITestListener {
 
 	@Override
 	public void onTestFailure(ITestResult result) {
-		Extenttest.get().log(Status.FAIL, "Test Failed");
-		Extenttest.get().fail(result.getThrowable()); // shows the error message
-//getting the driver info is
-		try {
-			driver = (WebDriver) result.getTestClass().getRealClass().getField("driver").get(result.getInstance());
-		} catch (Exception e) {
-			e.printStackTrace();
+		ExtentTest currentTest = Extenttest.get();
+		currentTest.log(Status.FAIL, "Test Failed");
+		currentTest.fail(result.getThrowable());
+
+		if (!(result.getInstance() instanceof BaseTest)) {
+			currentTest.log(Status.WARNING, "Failure screenshot unavailable: test instance is not a BaseTest.");
+			return;
 		}
-		String filepath = null;
-		try {
-			filepath = getScreenshot(result.getMethod().getMethodName(), driver);
-		} catch (IOException e) {
-			e.printStackTrace();
+
+		BaseTest baseTest = (BaseTest) result.getInstance();
+		if (baseTest.driver == null) {
+			currentTest.log(Status.WARNING, "Failure screenshot unavailable: WebDriver is not initialized.");
+			return;
 		}
-		Extenttest.get().addScreenCaptureFromPath(filepath, result.getMethod().getMethodName());
+
+		try {
+			String filepath = baseTest.getScreenshot(result.getMethod().getMethodName(), baseTest.driver);
+			currentTest.addScreenCaptureFromPath(filepath, result.getMethod().getMethodName());
+		} catch (IOException | WebDriverException e) {
+			currentTest.log(Status.WARNING, "Could not capture failure screenshot: " + e.getMessage());
+		}
 	}
 
 	@Override

@@ -1,11 +1,16 @@
 package SeleniumFramworkDesign.pageObjects;
 
+import java.time.Duration;
 import java.util.List;
 
+import org.openqa.selenium.ElementClickInterceptedException;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import SeleniumFramworkDesign.AbstractComponents.AbstractComponents;
 
@@ -31,7 +36,15 @@ public class CartPage extends AbstractComponents {
 	}
 
 	public CheckoutPage goToCheckout() {
-		checkoutbtn.click();
+		((JavascriptExecutor) driver).executeScript(
+				"arguments[0].scrollIntoView({block: 'center'});", checkoutbtn);
+		new WebDriverWait(driver, Duration.ofSeconds(10))
+				.until(ExpectedConditions.elementToBeClickable(checkoutbtn));
+		try {
+			checkoutbtn.click();
+		} catch (ElementClickInterceptedException e) {
+			((JavascriptExecutor) driver).executeScript("arguments[0].click();", checkoutbtn);
+		}
 		CheckoutPage checkout = new CheckoutPage(driver);
 		return checkout;
 

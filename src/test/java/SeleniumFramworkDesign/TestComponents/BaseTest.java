@@ -4,10 +4,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.Dimension;
@@ -90,9 +94,13 @@ public class BaseTest {
 	public String getScreenshot(String TestCaseName, WebDriver driver) throws IOException {
 		TakesScreenshot ts = (TakesScreenshot) driver;
 		File source = ts.getScreenshotAs(OutputType.FILE);
-		File fls = new File(System.getProperty("user.dir") + "//reportss//" + TestCaseName + ".png");
-		FileUtils.copyFile(source, fls);
-		return System.getProperty("user.dir") + "//reportss//" + TestCaseName + ".png";
+		Path reportDirectory = Paths.get(System.getProperty("user.dir"), "reportss");
+		Files.createDirectories(reportDirectory);
+		String safeTestCaseName = TestCaseName.replaceAll("[^A-Za-z0-9._-]", "_");
+		Path screenshotPath = reportDirectory.resolve(
+				safeTestCaseName + "_" + UUID.randomUUID() + ".png");
+		FileUtils.copyFile(source, screenshotPath.toFile());
+		return screenshotPath.toAbsolutePath().toString();
 	}
 
 }

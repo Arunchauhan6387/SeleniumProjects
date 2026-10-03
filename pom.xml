@@ -196,14 +196,6 @@
 					<version>3.3.1</version>
 				</plugin>
 				<plugin>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.13.0</version>
-				</plugin>
-				<plugin>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.3.0</version>
-				</plugin>
-				<plugin>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>3.4.2</version>
 				</plugin>
@@ -228,30 +220,9 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.8.1</version>  <!-- Make sure to use a version that
-					supports JDK 9+ -->
-					<configuration>
-						<compilerArgs>
-							<arg>--add-exports</arg>
-							<arg>
-								jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-						</compilerArgs>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.8.1</version>
 					<configuration>
-						<source>1.8</source> <!-- or another version of Java
-						you're using -->
-						<target>1.8</target> <!-- or another version of Java
-						you're using -->
-						<compilerArgs>
-							<arg>--release</arg>
-							<arg>8</arg> <!-- Use a specific version that works
-							with your setup -->
-						</compilerArgs>
+					<release>17</release>
 					</configuration>
 				</plugin>
 
