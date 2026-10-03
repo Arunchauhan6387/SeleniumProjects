@@ -1,12 +1,12 @@
 [
 {
-"email":"arunchauhan000786@gmail.com",
-"password":"@Arunchauhan6387739490",
-"productName":"ZARA COAT 3"
+  "email": "${TEST_USER_EMAIL}",
+  "password": "${TEST_USER_PASSWORD}",
+  "productName": "ZARA COAT 3"
 },
 {
-"email":"arunchauhan@gmail.com",
-"password":"@Arun12345",
-"productName":"ADIDAS ORIGINAL"
+  "email": "${TEST_USER_EMAIL}",
+  "password": "${TEST_USER_PASSWORD}",
+  "productName": "ADIDAS ORIGINAL"
 }
 ]

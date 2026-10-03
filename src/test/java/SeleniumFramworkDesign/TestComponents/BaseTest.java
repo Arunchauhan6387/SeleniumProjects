@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -36,20 +37,39 @@ public class BaseTest {
 
 	public WebDriver driver;
 	public LandingPage landingpage;
+	private String baseUrl;
 
 	public WebDriver initializeDriver() throws IOException {
-	    Properties prop = new Properties();
-	    FileInputStream fls = new FileInputStream(System.getProperty("user.dir")
-	            + "//src//main//java//SeleniumFramworkDesign//resources//GlobalData.properties");
-	    prop.load(fls);
+	    Properties settings = loadSettings();
+	    String environment = getSetting(settings, "APP_ENV", "app.env", "qa").trim().toUpperCase(Locale.ROOT);
+	    if (!environment.equals("DEV") && !environment.equals("QA")) {
+	        throw new IllegalArgumentException("APP_ENV must be either 'dev' or 'qa', but was: " + environment);
+	    }
+	    String urlKey = environment + "_BASE_URL";
+	    String baseUrlProperty = environment.toLowerCase(Locale.ROOT) + ".base.url";
+	    baseUrl = getSetting(settings, urlKey, baseUrlProperty, null);
+	    if (baseUrl == null || baseUrl.isBlank()) {
+	        throw new IOException("Missing " + environment + "_BASE_URL in .env");
+	    }
 
-	    // This logic is good! It prioritizes the Jenkins parameter.
-	    String browserName = System.getProperty("browser") != null ? System.getProperty("browser") : prop.getProperty("browser");
+	    Properties legacyProperties = new Properties();
+	    Path legacyPropertiesPath = Paths.get(System.getProperty("user.dir"),
+	            "src", "main", "java", "SeleniumFramworkDesign", "resources", "GlobalData.properties");
+	    try (FileInputStream input = new FileInputStream(legacyPropertiesPath.toFile())) {
+	        legacyProperties.load(input);
+	    }
+	    String browserName = getSetting(settings, "BROWSER", "browser",
+	            legacyProperties.getProperty("browser", "chrome"));
+	    boolean headless = Boolean.parseBoolean(getSetting(settings, "HEADLESS", "headless", "false"));
 
 	    if (browserName.equalsIgnoreCase("chrome")) {
 	        WebDriverManager.chromedriver().setup();
-	        driver = new ChromeDriver();
-	        driver.manage().window().setSize(new Dimension(1440, 900)); // Specific to Chrome in your code
+	        ChromeOptions options = new ChromeOptions();
+	        if (headless) {
+	            options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage");
+	        }
+	        driver = new ChromeDriver(options);
+	        driver.manage().window().setSize(new Dimension(1440, 900));
 
 	    } else if (browserName.equalsIgnoreCase("edge")) {
 	        // ✅ Added WebDriverManager for Edge
@@ -60,18 +80,45 @@ public class BaseTest {
 	        // ✅ Added WebDriverManager for Firefox
 	        WebDriverManager.firefoxdriver().setup();
 	        driver = new FirefoxDriver();
+	    } else {
+	        throw new IllegalArgumentException("Unsupported browser: " + browserName
+	                + ". Set BROWSER to chrome, edge, or firefox.");
 	    }
 
-	    driver.manage().window().maximize();
+	    if (!headless) {
+	        driver.manage().window().maximize();
+	    }
 	    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 	    return driver;
+	}
+
+	private Properties loadSettings() throws IOException {
+		Properties settings = new Properties();
+		Path envFile = Paths.get(System.getProperty("user.dir"), ".env");
+		if (Files.exists(envFile)) {
+			try (java.io.Reader reader = Files.newBufferedReader(envFile, StandardCharsets.UTF_8)) {
+				settings.load(reader);
+			}
+		}
+		return settings;
+	}
+
+	private String getSetting(Properties settings, String environmentKey, String systemProperty, String defaultValue) {
+		String value = System.getProperty(systemProperty);
+		if (value == null || value.isBlank()) {
+			value = System.getenv(environmentKey);
+		}
+		if (value == null || value.isBlank()) {
+			value = settings.getProperty(environmentKey);
+		}
+		return value == null || value.isBlank() ? defaultValue : value;
 	}
 
 	@BeforeMethod(alwaysRun = true)
 	public LandingPage launchApplication() throws IOException {
 		driver = initializeDriver();
 		landingpage = new LandingPage(driver);
-		landingpage.goTo();
+		landingpage.goTo(baseUrl);
 		return landingpage;
 	}
 
@@ -88,6 +135,24 @@ public class BaseTest {
 		List<HashMap<String, String>> data = mapper.readValue(jsonContent,
 				new TypeReference<List<HashMap<String, String>>>() {
 				});
+		Properties settings = loadSettings();
+		for (HashMap<String, String> row : data) {
+			for (HashMap.Entry<String, String> entry : row.entrySet()) {
+				String value = entry.getValue();
+				if (value != null && value.matches("\\$\\{[A-Z][A-Z0-9_]*\\}")) {
+					String key = value.substring(2, value.length() - 1);
+					String resolved = System.getenv(key);
+					if (resolved == null || resolved.isBlank()) {
+						resolved = settings.getProperty(key);
+					}
+					if (resolved == null || resolved.isBlank()) {
+						throw new IOException("Missing required test setting " + key
+								+ "; set it in .env or as an environment variable.");
+					}
+					entry.setValue(resolved);
+				}
+			}
+		}
 		return data;
 	}
 
