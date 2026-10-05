@@ -1,33 +1,30 @@
 package SeleniumFramworkDesign.tests;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.openqa.selenium.WebElement;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import SeleniumFramworkDesign.TestComponents.BaseTest;
-import SeleniumFramworkDesign.TestComponents.Retry;
-import SeleniumFramworkDesign.pageObjects.CartPage;
-import SeleniumFramworkDesign.pageObjects.ProductCatalogue;
+import SeleniumFramworkDesign.base.BaseTest;
+import SeleniumFramworkDesign.base.Retry;
+import SeleniumFramworkDesign.pages.CartPage;
+import SeleniumFramworkDesign.pages.ProductCatalogue;
 
 public class ErrorValidationsTest extends BaseTest {
 
 	@Test(groups = { "ErrorHandling" }, retryAnalyzer = Retry.class)
 	public void LoginErrorValidation() {
-		String productName = "ZARA COAT 3";
-		String countryName = "india";
-		ProductCatalogue productcatalogue = landingpage.loginApplication("arun786@gmail.com", "@Arun563");
+		landingpage.loginApplication("invalid@example.com", "invalid-password");
 		Assert.assertEquals("Incorrect email or password.", landingpage.getLoginErrorMsg());
-//class="ng-tns-c4-12 ng-star-inserted ng-trigger ng-trigger-flyInOut ngx-toastr toast-error"
 	}
 
 	@Test
-	public void ProductErrorValidation() throws InterruptedException {
-		String productName = "ZARA COAT 3";
-		String countryName = "india";
-		ProductCatalogue productcatalogue = landingpage.loginApplication("arunchauhan000786@gmail.com",
-				"@Arunchauhan6387739490");
+	public void ProductErrorValidation() throws InterruptedException, IOException {
+		String productName = getRequiredSetting("TEST_PRODUCT_1");
+		ProductCatalogue productcatalogue = landingpage.loginApplication(
+				getRequiredSetting("TEST_USER_EMAIL"), getRequiredSetting("TEST_USER_PASSWORD"));
 		List<WebElement> products = productcatalogue.getProductList();
 		productcatalogue.addProductToCart(productName);
 		CartPage cartpage = productcatalogue.goTocartPage();

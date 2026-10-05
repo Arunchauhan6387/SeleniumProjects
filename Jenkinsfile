@@ -19,7 +19,7 @@ pipeline {
         )
         choice(
             name: 'TEST_SUITE',
-            choices: ['Purchase', 'Regression', 'ErrorValidationTest', 'CucumberTests'],
+            choices: ['Purchase', 'Regression', 'ErrorValidationTest', 'CucumberTests', 'LinkValidation'],
             description: 'Maven test profile to run'
         )
     }
@@ -27,6 +27,7 @@ pipeline {
     options {
         timestamps()
         timeout(time: 20, unit: 'MINUTES')
+        disableConcurrentBuilds()
     }
 
     environment {
@@ -41,17 +42,32 @@ pipeline {
             }
         }
 
-        stage('Purchase UI tests') {
+        stage('Preflight') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'test-user-email', variable: 'TEST_USER_EMAIL'),
-                    string(credentialsId: 'test-user-password', variable: 'TEST_USER_PASSWORD')
-                ]) {
-                    script {
+                script {
+                    if (isUnix()) {
+                        sh 'java -version && mvn --version'
+                    } else {
+                        bat 'java -version && mvn --version'
+                    }
+                }
+            }
+        }
+
+        stage('UI tests') {
+            steps {
+                script {
+                    def environmentPrefix = params.APP_ENV.toUpperCase()
+                    def emailVariable = "${environmentPrefix}_TEST_USER_EMAIL"
+                    def passwordVariable = "${environmentPrefix}_TEST_USER_PASSWORD"
+                    withCredentials([
+                        string(credentialsId: "${params.APP_ENV}-test-user-email", variable: emailVariable),
+                        string(credentialsId: "${params.APP_ENV}-test-user-password", variable: passwordVariable)
+                    ]) {
                         if (isUnix()) {
-                            sh 'mvn --batch-mode --no-transfer-progress -P "$TEST_SUITE" test'
+                            sh 'mvn --batch-mode --no-transfer-progress -DfailIfNoTests=true -Dapp.env=$APP_ENV -Dbrowser=$BROWSER -Dheadless=$HEADLESS -P "$TEST_SUITE" test'
                         } else {
-                            bat 'mvn --batch-mode --no-transfer-progress -P %TEST_SUITE% test'
+                            bat 'mvn --batch-mode --no-transfer-progress -DfailIfNoTests=true -Dapp.env=%APP_ENV% -Dbrowser=%BROWSER% -Dheadless=%HEADLESS% -P %TEST_SUITE% test'
                         }
                     }
                 }
@@ -62,6 +78,7 @@ pipeline {
     post {
         always {
             junit allowEmptyResults: true, testResults: 'target/surefire-reports/TEST-*.xml'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'target/surefire-reports/**,target/cucumber.html,reportss/**'
         }
     }
 }

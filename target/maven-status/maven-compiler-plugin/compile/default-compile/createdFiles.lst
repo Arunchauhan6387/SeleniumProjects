@@ -1,8 +1,0 @@
-SeleniumFramworkDesign\pageObjects\OrderPage.class
-SeleniumFramworkDesign\pageObjects\ProductCatalogue.class
-SeleniumFramworkDesign\pageObjects\ConfirmationPage.class
-SeleniumFramworkDesign\AbstractComponents\AbstractComponents.class
-SeleniumFramworkDesign\pageObjects\CartPage.class
-SeleniumFramworkDesign\pageObjects\CheckoutPage.class
-SeleniumFramworkDesign\resources\ExtentReporterNG.class
-SeleniumFramworkDesign\pageObjects\LandingPage.class

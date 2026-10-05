@@ -1,6 +1,8 @@
 name: Purchase UI tests
 
 on:
+  pull_request:
+    branches: [master, main]
   push:
     branches: [master, main]
   workflow_dispatch:
@@ -9,7 +11,26 @@ permissions:
   contents: read
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Compile production and test code
+        run: mvn --batch-mode --no-transfer-progress -DskipTests test
+
   purchase-tests:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -17,15 +38,15 @@ jobs:
       QA_BASE_URL: https://rahulshettyacademy.com/client
       BROWSER: chrome
       HEADLESS: "true"
-      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
-      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      QA_TEST_USER_EMAIL: ${{ secrets.QA_TEST_USER_EMAIL }}
+      QA_TEST_USER_PASSWORD: ${{ secrets.QA_TEST_USER_PASSWORD }}
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -37,11 +58,14 @@ jobs:
       - name: Run Purchase suite
         run: mvn --batch-mode --no-transfer-progress -P Purchase test
 
-      - name: Upload Surefire reports
+      - name: Upload test reports and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: purchase-surefire-reports
-          path: target/surefire-reports/
+          name: purchase-test-reports
+          path: |
+            target/surefire-reports/
+            target/cucumber.html
+            reportss/
           if-no-files-found: ignore
           retention-days: 7
