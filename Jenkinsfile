@@ -33,6 +33,8 @@ pipeline {
     environment {
         DEV_BASE_URL = 'https://rahulshettyacademy.com/client'
         QA_BASE_URL = 'https://rahulshettyacademy.com/client'
+        QA_TEST_PRODUCT_1 = 'ZARA COAT 3'
+        QA_TEST_PRODUCT_2 = 'ADIDAS ORIGINAL'
     }
 
     stages {
