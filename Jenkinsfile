@@ -1,16 +1,37 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'APP_ENV',
+            choices: ['qa', 'dev'],
+            description: 'Target application environment'
+        )
+        choice(
+            name: 'BROWSER',
+            choices: ['chrome', 'edge', 'firefox'],
+            description: 'Browser installed on the Jenkins agent'
+        )
+        booleanParam(
+            name: 'HEADLESS',
+            defaultValue: true,
+            description: 'Run the browser without a visible window'
+        )
+        choice(
+            name: 'TEST_SUITE',
+            choices: ['Purchase', 'Regression', 'ErrorValidationTest', 'CucumberTests'],
+            description: 'Maven test profile to run'
+        )
+    }
+
     options {
         timestamps()
         timeout(time: 20, unit: 'MINUTES')
     }
 
     environment {
-        APP_ENV = 'qa'
+        DEV_BASE_URL = 'https://rahulshettyacademy.com/client'
         QA_BASE_URL = 'https://rahulshettyacademy.com/client'
-        BROWSER = 'chrome'
-        HEADLESS = 'true'
     }
 
     stages {
@@ -28,9 +49,9 @@ pipeline {
                 ]) {
                     script {
                         if (isUnix()) {
-                            sh 'mvn --batch-mode --no-transfer-progress -P Purchase test'
+                            sh 'mvn --batch-mode --no-transfer-progress -P "$TEST_SUITE" test'
                         } else {
-                            bat 'mvn --batch-mode --no-transfer-progress -P Purchase test'
+                            bat 'mvn --batch-mode --no-transfer-progress -P %TEST_SUITE% test'
                         }
                     }
                 }

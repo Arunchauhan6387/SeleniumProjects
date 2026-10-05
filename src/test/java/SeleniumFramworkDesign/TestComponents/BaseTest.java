@@ -22,7 +22,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -72,14 +74,20 @@ public class BaseTest {
 	        driver.manage().window().setSize(new Dimension(1440, 900));
 
 	    } else if (browserName.equalsIgnoreCase("edge")) {
-	        // ✅ Added WebDriverManager for Edge
 	        WebDriverManager.edgedriver().setup();
-	        driver = new EdgeDriver();
+	        EdgeOptions options = new EdgeOptions();
+	        if (headless) {
+	            options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage");
+	        }
+	        driver = new EdgeDriver(options);
 
-	    } else if (browserName.equalsIgnoreCase("firefox")) { // ✅ Changed to ignore case
-	        // ✅ Added WebDriverManager for Firefox
+	    } else if (browserName.equalsIgnoreCase("firefox")) {
 	        WebDriverManager.firefoxdriver().setup();
-	        driver = new FirefoxDriver();
+	        FirefoxOptions options = new FirefoxOptions();
+	        if (headless) {
+	            options.addArguments("-headless");
+	        }
+	        driver = new FirefoxDriver(options);
 	    } else {
 	        throw new IllegalArgumentException("Unsupported browser: " + browserName
 	                + ". Set BROWSER to chrome, edge, or firefox.");
